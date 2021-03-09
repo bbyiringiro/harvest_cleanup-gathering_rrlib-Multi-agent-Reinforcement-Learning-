@@ -82,7 +82,7 @@ class Controller(object):
                                                     'agent-2': rand_action[2],
                                                     'agent-3': rand_action[3],
                                                     'agent-4': rand_action[4]})
-            print(rew)
+            # print(rew)
 
             sys.stdout.flush()
             if render:

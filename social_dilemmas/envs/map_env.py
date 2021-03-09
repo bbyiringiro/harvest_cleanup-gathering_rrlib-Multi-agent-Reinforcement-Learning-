@@ -2,6 +2,7 @@
 """
 
 import random
+from social_dilemmas.envs import agent
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -95,6 +96,12 @@ class MapEnv(MultiAgentEnv):
                     self.wall_points.append([row, col])
         self.setup_agents()
 
+        self.iteration = 0
+        #IMRL
+        self.full_observable = False
+        self.intrinsically_motivated = True
+        
+
     def custom_reset(self):
         """Reset custom elements of the map. For example, spawn apples and build walls"""
         pass
@@ -159,7 +166,8 @@ class MapEnv(MultiAgentEnv):
         dones: dict indicating whether each agent is done
         info: dict to pass extra info to gym
         """
-
+        self.iteration += 1 
+        # print(self.iteration)
         self.beam_pos = []
         agent_actions = {}
         for agent_id, action in actions.items():
@@ -186,16 +194,38 @@ class MapEnv(MultiAgentEnv):
         rewards = {}
         dones = {}
         info = {}
-        for agent in self.agents.values():
+        for agent_id, agent in self.agents.items():
             agent.grid = map_with_agents
             rgb_arr = self.map_to_colors(agent.get_state(), self.color_map)
             rgb_arr = self.rotate_view(agent.orientation, rgb_arr)
             observations[agent.agent_id] = rgb_arr
             rewards[agent.agent_id] = agent.compute_reward()
             dones[agent.agent_id] = agent.get_done()
+            if self.intrinsically_motivated:
+                inReward = agent.update_internal(actions[agent_id],\
+                    rewards[agent.agent_id],\
+                    self.get_neigbors(agent_id, agent),\
+                    self.iteration)
+                print(inReward)
+                print(f"{agent_id} tag(figre) number : {agent.defection_n}")
+                print(f"{agent_id} eligibility  trace : {agent.eligibility_trace}")
+
+            if agent_id == 'agent-0':
+                print(len(self.get_neigbors(agent_id, agent)))
         dones["__all__"] = np.any(list(dones.values()))
         return observations, rewards, dones, info
 
+    def get_neigbors(self, agent_id, agent):
+        if self.full_observable:
+            return [neigbor for id, neigbor in self.agents.items() if id != agent_id ]
+        else:
+            return [neigbor for id, neigbor in self.agents.items() if id != agent_id and \
+                self.is_neibor_in_view(agent,neigbor)]
+    def is_neibor_in_view(self, _agent, _neigbor):
+        # agent_view = x_min, x_max, y_min, y_max 
+        return _neigbor.pos[0] >= _agent.pos[0] - _agent.row_size and _neigbor.pos[0] <= _agent.pos[0] + _agent.row_size\
+            and _neigbor.pos[1] >= _agent.pos[1] - _agent.col_size and _neigbor.pos[1] <= _agent.pos[1] + _agent.col_size
+    
     def reset(self):
         """Reset the environment.
 
@@ -208,6 +238,7 @@ class MapEnv(MultiAgentEnv):
             the initial observation of the space. The initial reward is assumed
             to be zero.
         """
+        self.iteration = 0
         self.beam_pos = []
         self.agents = {}
         self.setup_agents()
@@ -324,6 +355,8 @@ class MapEnv(MultiAgentEnv):
                 to disk at this location.
         """
         map_with_agents = self.get_map_with_agents()
+        # rgb_arr = self.map_to_colors(self.agents['agent-0'].get_state(), self.color_map)
+        # rgb_arr = self.rotate_view(self.agents['agent-0'].orientation, rgb_arr)
 
         rgb_arr = self.map_to_colors(map_with_agents)
         plt.imshow(rgb_arr, interpolation='nearest')
