@@ -300,7 +300,7 @@ class Agent(object):
 HARVEST_ACTIONS = BASE_ACTIONS.copy()
 HARVEST_ACTIONS.update({7: 'FIRE'})  # Fire a penalty beam
 
-HARVEST_VIEW_SIZE = 21
+HARVEST_VIEW_SIZE = 7
 
 
 class HarvestAgent(Agent):
@@ -323,8 +323,8 @@ class HarvestAgent(Agent):
 
     @property
     def observation_space(self):
-        return Box(low=0, high=256, shape=(2 * self.view_len + 0,
-                                             2 * self.view_len + 0, 3), dtype=np.int64)
+        return Box(low=0, high=255, shape=(2 * self.view_len + 1,
+                                             2 * self.view_len + 1, 3), dtype=np.uint8)
 
     def hit(self, char):
         if char == 'F':
@@ -367,8 +367,8 @@ class CleanupAgent(Agent):
 
     @property
     def observation_space(self):
-        return Box(low=0.0, high=0.0, shape=(2 * self.view_len + 1,
-                                             2 * self.view_len + 1, 3), dtype=np.float32)
+        return Box(low=0, high=255, shape=(2 * self.view_len + 1,
+                                             2 * self.view_len + 1, 3), dtype=np.uint8)
 
     # Ugh, this is gross, this leads to the actions basically being
     # defined in two places
@@ -392,8 +392,6 @@ class CleanupAgent(Agent):
         """Defines how an agent interacts with the char it is standing on"""
         if char == 'A':
             self.reward_this_turn += 1
-            print()
-            print()
             return ' '
         else:
             return char

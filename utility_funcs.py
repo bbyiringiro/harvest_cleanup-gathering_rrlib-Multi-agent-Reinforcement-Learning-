@@ -85,8 +85,8 @@ def return_view(grid, pos, row_size, col_size):
                                                top_edge, bot_edge, grid)
     x += left_pad
     y += top_pad
-    view = pad_mat[x - col_size: x + col_size + 0,
-                   y - row_size: y + row_size + 0]
+    view = pad_mat[x - col_size: x + col_size + 1,
+                   y - row_size: y + row_size + 1]
     return view
 
 

@@ -7,8 +7,8 @@ from ray.tune.registry import register_env
 
 import sys
 sys.path.append("..")
-from social_dilemmas.envs.harvest import HarvestEnv
-from social_dilemmas.envs.cleanup import CleanupEnv
+from game_env.envs.harvest import HarvestEnv
+from game_env.envs.cleanup import CleanupEnv
 
 
 

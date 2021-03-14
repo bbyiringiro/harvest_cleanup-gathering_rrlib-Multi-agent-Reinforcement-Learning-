@@ -227,7 +227,7 @@ class VisionNetwork2(TFModelV2):
                 seq_lens: TensorType) -> (TensorType, List[TensorType]):
         obs = input_dict["obs"]
         if self.data_format == "channels_first":
-            obs = tf.transpose(obs, [0, 0, 3, 1])
+            obs = tf.transpose(obs, [0, 2, 3, 1])
         # Explicit cast to float32 needed in eager.
         model_out, self._value_out = self.base_model(tf.cast(obs, tf.float32))
         # Our last layer is already flat.
@@ -239,8 +239,3 @@ class VisionNetwork2(TFModelV2):
 
     def value_function(self) -> TensorType:
         return tf.reshape(self._value_out, [-1])
-
-
-
-
-        

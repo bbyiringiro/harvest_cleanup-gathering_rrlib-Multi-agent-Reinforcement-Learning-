@@ -2,7 +2,7 @@
 """
 
 import random
-from social_dilemmas.envs import agent
+from game_env.envs import agent
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -99,7 +99,7 @@ class MapEnv(MultiAgentEnv):
         self.iteration = 0
         #IMRL
         self.full_observable = False
-        self.intrinsically_motivated = True
+        self.intrinsically_motivated = False
         
 
     def custom_reset(self):
@@ -198,20 +198,24 @@ class MapEnv(MultiAgentEnv):
             agent.grid = map_with_agents
             rgb_arr = self.map_to_colors(agent.get_state(), self.color_map)
             rgb_arr = self.rotate_view(agent.orientation, rgb_arr)
-            observations[agent.agent_id] = rgb_arr
-            rewards[agent.agent_id] = agent.compute_reward()
-            dones[agent.agent_id] = agent.get_done()
+            observations[agent_id] = rgb_arr
+            rewards[agent_id] = agent.compute_reward()
+            dones[agent_id] = agent.get_done()
+            info[agent_id] = {'exR':rewards[agent_id]}
+            info[agent_id]['agent_action']= actions[agent_id]
+
             if self.intrinsically_motivated:
                 inReward = agent.update_internal(actions[agent_id],\
                     rewards[agent.agent_id],\
                     self.get_neigbors(agent_id, agent),\
                     self.iteration)
+                info[agent_id]['inR'] = inReward
                 print(inReward)
                 print(f"{agent_id} tag(figre) number : {agent.defection_n}")
                 print(f"{agent_id} eligibility  trace : {agent.eligibility_trace}")
+            else:
+                info[agent_id]['inR'] = 0
 
-            if agent_id == 'agent-0':
-                print(len(self.get_neigbors(agent_id, agent)))
         dones["__all__"] = np.any(list(dones.values()))
         return observations, rewards, dones, info
 

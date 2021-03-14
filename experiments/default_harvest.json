@@ -1,0 +1,19 @@
+{
+    "exp_name": "Default_harvest", 
+    "env": "gathering", 
+    "algorithm": "A3C", 
+    "num_agents": 5, 
+    "train_batch_size": 300, 
+    "checkpoint_frequency": 100, 
+    "training_iterations": 10000, 
+    "num_cpus": 2, 
+    "num_gpus": 1, 
+    "use_gpus_for_workers": false, 
+    "use_gpu_for_driver": false, 
+    "num_workers_per_device": 2, 
+    "reuse_actors": false, 
+    "resume": false, 
+    "verbose": 3, 
+    "framework": "tf", 
+    "from_checkpoint": "None" 
+}

@@ -23,8 +23,11 @@ from model import *
 import sys
 sys.path.append("..")
 
-from social_dilemmas.envs.harvest import HarvestEnv
-from social_dilemmas.envs.cleanup import CleanupEnv
+from game_env.envs.harvest import HarvestEnv
+from game_env.envs.cleanup import CleanupEnv
+from game_env.mycallbacks import HarvestCallback, CleanUPCallback 
+
+from utils.args_extractor  import get_args
 
 
 
@@ -32,45 +35,6 @@ from social_dilemmas.envs.cleanup import CleanupEnv
 
 
 
-parser = argparse.ArgumentParser()
-
-
-
-parser.add_argument("--exp_name", default=None, help='Name of the ray_results experiment directory where results are stored.')
-parser.add_argument('--env', default='harvest',
-    help='Name of the environment to rollout. Can be cleanup or harvest.')
-parser.add_argument('--algorithm', default='A3C',
-    help='Name of the rllib algorithm to use.')
-parser.add_argument('--num_agents', default=5,
-    help='Number of agent policies')
-parser.add_argument('--train_batch_size', default=30000,
-    help='Size of the total dataset over which one epoch is computed.')
-parser.add_argument('--checkpoint_frequency', default=100,
-    help='Number of steps before a checkpoint is saved.')
-parser.add_argument('--training_iterations', default=10000,
-    help='Total number of steps to train for')
-parser.add_argument('--num_cpus',type=int, default=2,
-    help='Number of available CPUs')
-parser.add_argument('--num_gpus',type=int, default=1,
-    help='Number of available GPUs')
-parser.add_argument("--use_gpus_for_workers", default=False,
-    help='Set to true to run workers on GPUs rather than CPUs')
-parser.add_argument("--use_gpu_for_driver", default=False,
-    help='Set to true to run driver on GPU rather than CPU.')
-parser.add_argument('--num_workers_per_device',type=int, default=2,
-    help='Number of workers to place on a single device (CPU or GPU)')
-parser.add_argument(
-        "--resume",
-        action='store_true',
-        help="Whether to attempt to resume previous Tune experiments.")
-parser.add_argument(
-        "--verbose",
-        type=int,
-        default=1,
-        help="Whether to attempt to resume previous Tune experiments.")
-
-parser.add_argument(
-    "--framework", choices=["tf2", "tf", "tfe", "torch"], default="tf")
 
 harvest_default_params = {
     'lr_init': 0.00136,
@@ -92,10 +56,12 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         def env_creator(_):
             return HarvestEnv(num_agents=num_agents)
         single_env = HarvestEnv()
+        callback = HarvestCallback
     else:
         def env_creator(_):
             return CleanupEnv(num_agents=num_agents)
         single_env = CleanupEnv()
+        callback = CleanUPCallback
 
     env_name = env + "_env"
     register_env(env_name, env_creator)
@@ -138,6 +104,11 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         num_gpus_per_worker = 0
         num_cpus_per_worker = spare_cpus / num_workers
 
+    
+    filters= [
+    [6, [3, 3], 2],
+    [6, [8, 8], 1]
+    ]
 
 
     # hyperparams
@@ -150,6 +121,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
             "func_create":tune.function(env_creator),
 
         },
+        "callbacks": callback,
         "num_gpus": args.num_gpus,
         "multiagent": {
             "policies": policies,
@@ -157,7 +129,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         },
         "model": {
             "custom_model": model_name,
-            # "conv_filters":filters,
+            "conv_filters":filters,
             # "use_attention": True,
             # "post_fcnet_hiddens": [32, 32]
             # "use_lstm": True,
@@ -169,6 +141,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         "framework": args.framework,
         "train_batch_size": train_batch_size,
         "horizon": 1000,
+        # "rollout_fragment_length":50,
         "lr_schedule":
         [[0, hparams['lr_init']],
             [20000000, hparams['lr_final']]],
@@ -218,5 +191,5 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
+    args, device = get_args()
     main(args)

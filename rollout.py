@@ -7,8 +7,8 @@ import os
 import sys
 import shutil
 
-from social_dilemmas.envs.cleanup import CleanupEnv
-from social_dilemmas.envs.harvest import HarvestEnv
+from game_env.envs.cleanup import CleanupEnv
+from game_env.envs.harvest import HarvestEnv
 import argparse
 import matplotlib.pyplot as plt
 
@@ -19,7 +19,7 @@ parser.add_argument('--env', default='harvest',
     help='Name of the environment to rollout. Can be cleanup or harvest.')
 parser.add_argument('--render_type', default='prettyz',
     help='Name of the environment to rollout. Can be cleanup or harvest.')
-parser.add_argument('--fps', default=8, type=int,
+parser.add_argument('--fps', default=5, type=int,
     help='Number of frames per second')
 parser.add_argument("--render", action='store_true',
     help='whether to render')
@@ -123,18 +123,16 @@ class Controller(object):
 
             rewards, observations, full_obs = self.rollout(
                 horizon=horizon, save_path=image_path, render=render)
-            # utility_funcs.make_video_from_image_dir(path, image_path, fps=fps,
-            #                                         video_name=video_name)
-            pass
+            utility_funcs.make_video_from_image_dir(path, image_path, fps=fps,
+                                                    video_name=video_name)
 
             # Clean up images
             shutil.rmtree(image_path)
         else:
             
             rewards, observations, full_obs = self.rollout(horizon=horizon,render=render)
-            pass
-            # utility_funcs.make_video_from_rgb_imgs(full_obs, path, fps=fps,
-            #                                        video_name=video_name)
+            utility_funcs.make_video_from_rgb_imgs(full_obs, path, fps=fps,
+                                                   video_name=video_name)
 
 
 def main():
