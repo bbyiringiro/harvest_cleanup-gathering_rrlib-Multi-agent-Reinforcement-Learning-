@@ -14,6 +14,7 @@ def str2bool(v):
 
 
 def get_args():
+   
     """
     Returns a namedtuple with arguments extracted from the command line.
     :return: A namedtuple with arguments
@@ -55,7 +56,7 @@ def get_args():
             help="Whether to attempt to resume previous Tune experiments.")
 
     parser.add_argument(
-        "--framework", choices=["tf2", "tf", "tfe", "torch"], default="tf")
+        "--framework", choices=["tf2", "tf", "tfe", "torch"], default="tfe")
     parser.add_argument('--json_file', nargs="?", type=str, default=None,
                         help='')
 

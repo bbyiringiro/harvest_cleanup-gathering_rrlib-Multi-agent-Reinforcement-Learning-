@@ -47,6 +47,7 @@ class Agent(object):
         self.row_size = row_size
         self.col_size = col_size
         self.reward_this_turn = 0
+        self.tagged=False
 
 
         #IMRL
@@ -57,7 +58,7 @@ class Agent(object):
 
         #TASK game has to match rllib's and set alpha appropriately
         #elibility trace
-        self.gamma = 0.99 #DQNSetting.GAMMA ##
+        self.gamma = 0.99 #
         self.eligibility_trace = 0
         self.el_alpha=0.5
         
@@ -80,6 +81,9 @@ class Agent(object):
         self.f_u = 1 # conceder 0 < u < 1, linear: u=1, and boulware u>u
         #secondarary emotion derivation g_x
         self.g_v = 1 # 0.2 0.6 1, 2, 3, 5, 10 
+    def reset(self):
+        raise NotImplementedError
+
     def update_internal(self, action, _reward, neigbors, iter_time):
         
         self.update_eligibility(_reward)
@@ -135,10 +139,10 @@ class Agent(object):
                 # W = (2*self.eligibility_trace - self.context_memory*(T-S))/self.context_memory*(T-S) # w = (2r_t - Mx(T-S))/Mx(T-S)
                 W = (2*self.eligibility_trace - self.context_memory*max(1, T-S))/(self.context_memory*max(1, T-S))
             elif self.wellbeing_fx  == 'variance':
-                W = (self.gamma*self.el_alpha*self.eligibility_trace + _reward - self.eligibility_trace)/self.context_memory*(T-S) # w= (r_t+1 - r_t)/Mx(T-S)
+                W = (self.gamma*self.el_alpha*self.eligibility_trace + _reward - self.eligibility_trace)/(self.context_memory*(T-S)) # w= (r_t+1 - r_t)/Mx(T-S)
             elif self.wellbeing_fx == 'aspiration':
                 h = 1
-                W = np.tanh(h*(self.eligibility_trace/self.context_memory-self.aspirational))
+                W = np.tanh(h*(self.eligibility_trace/(self.context_memory-self.aspirational)))
                 self.aspirational = (1-self.aspiration_beta)*self.aspirational + self.aspiration_beta*(self.eligibility_trace/self.context_memory)
             else:
                 print("the wellbeing function not known")
@@ -233,6 +237,10 @@ class Agent(object):
         reward = self.reward_this_turn
         self.reward_this_turn = 0
         return reward
+    def istagged(self):
+        temp = self.tagged
+        self.tagged = False #reset for the next step
+        return temp
 
     def set_pos(self, new_pos):
         self.pos = np.array(new_pos)
@@ -310,6 +318,9 @@ class HarvestAgent(Agent):
         super().__init__(agent_id, start_pos, start_orientation, grid, view_len, view_len)
         self.update_agent_pos(start_pos)
         self.update_agent_rot(start_orientation)
+    def reset(self):
+        self.defectingDeque.clear()
+        self.eligibility_trace= 0
 
     @property
     def action_space(self):
@@ -328,6 +339,7 @@ class HarvestAgent(Agent):
 
     def hit(self, char):
         if char == 'F':
+            self.tagged = True
             self.reward_this_turn -= 50
 
     def fire_beam(self, char):
@@ -360,6 +372,9 @@ class CleanupAgent(Agent):
         # remember what you've stepped on
         self.update_agent_pos(start_pos)
         self.update_agent_rot(start_orientation)
+    def reset(self):
+        self.defectingDeque.clear()
+        self.eligibility_trace= 0
 
     @property
     def action_space(self):
@@ -385,6 +400,7 @@ class CleanupAgent(Agent):
 
     def hit(self, char):
         if char == 'F':
+            self.tagged = True
             self.reward_this_turn -= 50
 
     def consume(self, char):

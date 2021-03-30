@@ -2,7 +2,7 @@ import argparse
 import gym
 import os
 import random
-
+import sys
 import ray
 from ray import tune
 from ray.rllib.models import ModelCatalog
@@ -21,13 +21,13 @@ from ray.tune.registry import register_env
 from model import *
 
 import sys
-sys.path.append("..")
+sys.path.append("utils")
 
 from game_env.envs.harvest import HarvestEnv
 from game_env.envs.cleanup import CleanupEnv
 from game_env.mycallbacks import HarvestCallback, CleanUPCallback 
 
-from utils.args_extractor  import get_args
+from arg_extractor  import get_args
 
 
 
@@ -39,8 +39,11 @@ from utils.args_extractor  import get_args
 harvest_default_params = {
     'lr_init': 0.00136,
     'lr_final': 0.000028,
-    # 'entropy_coeff': .000687
+    'entropy_coeff': .000687
     }
+
+
+    
 
 cleanup_default_params = {
     'lr_init': 0.00126,
@@ -53,8 +56,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
           num_workers_per_device=1):
 
     if env == 'harvest':
-        def env_creator(_):
-            return HarvestEnv(num_agents=num_agents)
+        def env_creator(env_config):
+            return HarvestEnv(config=env_config, num_agents=num_agents)
         single_env = HarvestEnv()
         callback = HarvestCallback
     else:
@@ -119,6 +122,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
             "env_name":env_name,
             "run":algorithm,
             "func_create":tune.function(env_creator),
+            "visual":True
 
         },
         "callbacks": callback,
@@ -131,11 +135,11 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
             "custom_model": model_name,
             "conv_filters":filters,
             # "use_attention": True,
-            # "post_fcnet_hiddens": [32, 32]
+            "post_fcnet_hiddens": [32, 32],
             # "use_lstm": True,
             # "lstm_use_prev_action":True,
             # "lstm_use_prev_reward":True,
-            # "lstm_cell_size": 128
+            # "lstm_cell_size": 32
         
         },
         "framework": args.framework,
@@ -144,7 +148,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         # "rollout_fragment_length":50,
         "lr_schedule":
         [[0, hparams['lr_init']],
-            [20000000, hparams['lr_final']]],
+            [2000000, hparams['lr_final']]], #20000000
         # "entropy_coeff": hparams['entropy_coeff'],
         "num_workers": num_workers,
         "num_gpus": gpus_for_driver,  # The number of GPUs for the driver
@@ -176,7 +180,7 @@ def main(args):
         exp_name = args.env + '_' + args.algorithm
     else:
         exp_name = args.exp_name
-    print('Commencing experiment', exp_name)
+    print('starting experiment', exp_name)
     run_experiments({
         exp_name: {
             "run": alg_run,
@@ -192,4 +196,5 @@ def main(args):
 
 if __name__ == '__main__':
     args, device = get_args()
+
     main(args)

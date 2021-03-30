@@ -91,8 +91,8 @@ class Controller(object):
                 else:
                     self.env.render()
 
-            # rgb_arr = self.env.map_to_colors()
-            rgb_arr = obs['agent-0']
+            rgb_arr = self.env.map_to_colors()
+            # rgb_arr = obs['agent-0']
             full_obs[i] = rgb_arr.astype(np.uint8)
             observations.append(obs['agent-0'])
             rewards.append(rew['agent-0'])

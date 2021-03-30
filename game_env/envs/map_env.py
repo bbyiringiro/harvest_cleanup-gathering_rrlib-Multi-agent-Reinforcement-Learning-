@@ -7,6 +7,8 @@ from game_env.envs import agent
 import matplotlib.pyplot as plt
 import numpy as np
 from ray.rllib.env import MultiAgentEnv
+import matplotlib.pyplot as plt
+
 
 ACTIONS = {'MOVE_LEFT': [-1, 0],  # Move left
            'MOVE_RIGHT': [1, 0],  # Move right
@@ -59,7 +61,7 @@ DEFAULT_COLOURS = {' ': [0, 0, 0],  # Black background
 
 class MapEnv(MultiAgentEnv):
 
-    def __init__(self, ascii_map, num_agents=1, render=True, color_map=None):
+    def __init__(self, ascii_map, num_agents=1, config=None, render=True, color_map=None):
         """
 
         Parameters
@@ -74,6 +76,7 @@ class MapEnv(MultiAgentEnv):
         color_map: dict
             Specifies how to convert between ascii chars and colors
         """
+        self.visual = False
         self.num_agents = num_agents
         self.base_map = self.ascii_to_numpy(ascii_map)
         # map without agents or beams
@@ -100,6 +103,7 @@ class MapEnv(MultiAgentEnv):
         #IMRL
         self.full_observable = False
         self.intrinsically_motivated = False
+        plt.ion()
         
 
     def custom_reset(self):
@@ -203,6 +207,10 @@ class MapEnv(MultiAgentEnv):
             dones[agent_id] = agent.get_done()
             info[agent_id] = {'exR':rewards[agent_id]}
             info[agent_id]['agent_action']= actions[agent_id]
+            info[agent_id]['iter'] = self.iteration
+            info[agent_id]['tagged'] = int(agent.istagged())
+
+
 
             if self.intrinsically_motivated:
                 inReward = agent.update_internal(actions[agent_id],\
@@ -216,7 +224,11 @@ class MapEnv(MultiAgentEnv):
             else:
                 info[agent_id]['inR'] = 0
 
+                
+
         dones["__all__"] = np.any(list(dones.values()))
+        if self.visual:
+            self.render()
         return observations, rewards, dones, info
 
     def get_neigbors(self, agent_id, agent):
@@ -254,6 +266,7 @@ class MapEnv(MultiAgentEnv):
         observations = {}
         for agent in self.agents.values():
             agent.grid = map_with_agents
+            agent.reset()
             # agent.grid = util.return_view(map_with_agents, agent.pos,
             #                               agent.row_size, agent.col_size)
             rgb_arr = self.map_to_colors(agent.get_state(), self.color_map)
@@ -365,10 +378,10 @@ class MapEnv(MultiAgentEnv):
         rgb_arr = self.map_to_colors(map_with_agents)
         plt.imshow(rgb_arr, interpolation='nearest')
         if filename is None:
-            plt.pause(.0001); 
+            plt.pause(.001); 
             plt.show()
         else:
-            plt.savefig(filename)
+            plt.savefig(filename+'.pdf')
 
     def update_moves(self, agent_actions):
         """Converts agent action tuples into a new map and new agent positions.
