@@ -11,9 +11,12 @@
     "use_gpus_for_workers": false, 
     "use_gpu_for_driver": false, 
     "num_workers_per_device": 2, 
-    "reuse_actors": false, 
+    "reuse_actors": true, 
     "resume": false, 
     "verbose": 0, 
     "framework": "tf", 
-    "from_checkpoint": "None" 
+    "from_checkpoint": "None",
+    "imrl":{
+        "use":false
+    } 
 }

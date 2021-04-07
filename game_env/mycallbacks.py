@@ -33,7 +33,7 @@ class CleanUPCallback(DefaultCallbacks):
         episode.user_data["intrinsic_reward"] = []
         episode.user_data["aggress"] = []
         episode.user_data["clean_counter"] = []
-        episode.user_data["sustain"] = []
+        episode.user_data["sustain"] = {'agent-'+str(i):[] for i in range(self.num_of_agents)}
         episode.user_data["tagged_agents"] = []
         episode.user_data["agent_rewards"] = {'agent-'+str(i):0 for i in range(self.num_of_agents)}
         
@@ -45,7 +45,6 @@ class CleanUPCallback(DefaultCallbacks):
         in_reward = 0
         ex_reward = 0
         # num_of_agents = 5
-        sustain = -1
         n_tagged = 0
         fire = 0
         clean_counter = 0
@@ -62,7 +61,7 @@ class CleanUPCallback(DefaultCallbacks):
             episode.user_data["agent_rewards"][agent_key] += ex_reward
 
             if(info['exR'] > 0):
-                sustain += info.get('iter')
+                episode.user_data["sustain"][agent_key].append(info.get('iter'))
             if info['agent_action'] == 7:
                 fire += 1
             elif info['agent_action'] == 8:
@@ -76,14 +75,18 @@ class CleanUPCallback(DefaultCallbacks):
         episode.user_data["aggress"].append(fire)
         episode.user_data["clean_counter"].append(clean_counter)
 
-
-        if sustain >= 0:
-            episode.user_data["sustain"].append(sustain+1) # +1 to compensate the -1 default
         # print(ex_reward, in_reward, fire, sustain, n_tagged)
 
     def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
+
+        sus = 0
+        for i in range(self.num_of_agents):
+            agent_key = 'agent-'+str(i)
+            sus += np.average(episode.user_data["sustain"][agent_key]) if len(episode.user_data["sustain"][agent_key]) >0 else 0
+        sus /=self.num_of_agents
+
         
 
         T = len(episode.user_data["extrinsic_reward"]) # episode lenght
@@ -95,7 +98,7 @@ class CleanUPCallback(DefaultCallbacks):
         
 
         episode.custom_metrics["Utalitarian_metric"] = episode.custom_metrics["ExReward"]/T
-        episode.custom_metrics["sustainability"] = np.sum(episode.user_data["sustain"])/self.num_of_agents
+        episode.custom_metrics["sustainability"] = sus
         episode.custom_metrics["equality"] = equality_metric(list(episode.user_data["agent_rewards"].values()))
         episode.custom_metrics["peace_metric"] = (T*self.num_of_agents - np.sum(episode.user_data["tagged_agents"]))/T
         # print(f"equality {episode.custom_metrics['equality']}  peace metric {episode.custom_metrics['peace_metric']}")
@@ -116,6 +119,8 @@ class HarvestCallback(DefaultCallbacks):
         episode.user_data["aggress"] = []
         episode.user_data["sustain"] = []
         episode.user_data["tagged_agents"] = []
+        episode.user_data["sustain"] = {'agent-'+str(i):[] for i in range(self.num_of_agents)}
+
 
         episode.user_data["agent_rewards"] = {'agent-'+str(i):0 for i in range(self.num_of_agents)}
         
@@ -143,7 +148,8 @@ class HarvestCallback(DefaultCallbacks):
             episode.user_data["agent_rewards"][agent_key] += ex_reward
 
             if(info['exR'] > 0):
-                sustain += info.get('iter')
+                episode.user_data["sustain"][agent_key].append(info.get('iter'))
+
             if info['agent_action'] == 7:
                 fire += 1
 
@@ -155,13 +161,17 @@ class HarvestCallback(DefaultCallbacks):
         episode.user_data["aggress"].append(fire)
 
 
-        if sustain >= 0:
-            episode.user_data["sustain"].append(sustain+1) # +1 to compensate the -1 default
         # print(ex_reward, in_reward, fire, sustain, n_tagged)
 
     def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
+
+        sus = 0
+        for i in range(self.num_of_agents):
+            agent_key = 'agent-'+str(i)
+            sus += np.average(episode.user_data["sustain"][agent_key]) if len(episode.user_data["sustain"][agent_key]) >0 else 0
+        sus /=self.num_of_agents
         
 
         T = len(episode.user_data["extrinsic_reward"]) # episode lenght
@@ -170,7 +180,7 @@ class HarvestCallback(DefaultCallbacks):
         episode.custom_metrics["InReward"] = np.sum(episode.user_data["intrinsic_reward"])
         episode.custom_metrics["aggress_metric"] = np.sum(episode.user_data["aggress"])
         episode.custom_metrics["Utalitarian_metric"] = episode.custom_metrics["ExReward"]/T
-        episode.custom_metrics["sustainability"] = np.sum(episode.user_data["sustain"])/self.num_of_agents
+        episode.custom_metrics["sustainability"] = sus
         episode.custom_metrics["equality"] = equality_metric(list(episode.user_data["agent_rewards"].values()))
         episode.custom_metrics["peace_metric"] = (T*self.num_of_agents - np.sum(episode.user_data["tagged_agents"]))/T
         # print(f"equality {episode.custom_metrics['equality']}  peace metric {episode.custom_metrics['peace_metric']}")

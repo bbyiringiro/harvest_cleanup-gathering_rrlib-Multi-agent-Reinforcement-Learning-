@@ -58,12 +58,12 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     if env == 'harvest':
         def env_creator(env_config):
             return HarvestEnv(config=env_config, num_agents=num_agents)
-        single_env = HarvestEnv()
+        single_env = HarvestEnv(config={'imrl':{'use':False}})
         callback = HarvestCallback
     else:
-        def env_creator(_):
-            return CleanupEnv(num_agents=num_agents)
-        single_env = CleanupEnv()
+        def env_creator(env_config):
+            return CleanupEnv(config=env_config, num_agents=num_agents)
+        single_env = CleanupEnv(config={'imrl':{'use':False}})
         callback = CleanUPCallback
 
     env_name = env + "_env"
@@ -122,7 +122,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
             "env_name":env_name,
             "run":algorithm,
             "func_create":tune.function(env_creator),
-            "visual":True
+            "visual":True,
+            "exp":args.exp_index
 
         },
         "callbacks": callback,
@@ -156,6 +157,10 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         "num_gpus_per_worker": num_gpus_per_worker,   # Can be a fraction
         "num_cpus_per_worker": num_cpus_per_worker,   # Can be a fraction
     })
+    if args.imrl['use']:
+        config['env_config'].update({
+            'imrl':args.imrl,
+        })
 
 
 
@@ -164,6 +169,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
 def main(args):
     ray.init()
+    # ray.init(log_to_driver=False)
     if args.env == 'harvest':
         hparams = harvest_default_params
     else:
@@ -181,17 +187,30 @@ def main(args):
     else:
         exp_name = args.exp_name
     print('starting experiment', exp_name)
-    run_experiments({
-        exp_name: {
-            "run": alg_run,
-            "env": env_name,
-            "stop": {
+    # run_experiments({
+    #     exp_name: {
+    #         "run": alg_run,
+    #         "env": env_name,
+    #         "stop": {
+    #             "training_iteration": args.training_iterations
+    #         },
+    #         'checkpoint_freq': args.checkpoint_frequency,
+    #         "config": config,
+    #     }
+    # }, verbose=args.verbose, resume=args.resume)
+
+    tune.run(alg_run,
+             name=exp_name,
+             stop= {
                 "training_iteration": args.training_iterations
             },
-            'checkpoint_freq': args.checkpoint_frequency,
-            "config": config,
-        }
-    }, verbose=args.verbose, resume=args.resume)
+            checkpoint_freq = args.checkpoint_frequency,
+            config = config,
+            checkpoint_at_end = True, 
+            verbose=args.verbose, 
+            resume=args.resume, 
+            reuse_actors=args.reuse_actors
+        )
 
 
 if __name__ == '__main__':

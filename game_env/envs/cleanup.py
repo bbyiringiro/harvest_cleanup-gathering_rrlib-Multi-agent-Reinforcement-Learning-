@@ -25,8 +25,8 @@ appleRespawnProbability = 0.05
 
 class CleanupEnv(MapEnv):
 
-    def __init__(self, ascii_map=CLEANUP_MAP, num_agents=1, render=False):
-        super().__init__(ascii_map, num_agents, render)
+    def __init__(self, ascii_map=CLEANUP_MAP, config=None, num_agents=1, render=False):
+        super().__init__(ascii_map, num_agents, config=config, render=render)
 
         # compute potential waste area
         unique, counts = np.unique(self.base_map, return_counts=True)
@@ -42,6 +42,7 @@ class CleanupEnv(MapEnv):
         self.waste_points = []
         self.river_points = []
         self.stream_points = []
+        self.num_waster_clean = 0
         for row in range(self.base_map.shape[0]):
             for col in range(self.base_map.shape[1]):
                 if self.base_map[row, col] == 'P':
@@ -79,6 +80,7 @@ class CleanupEnv(MapEnv):
         for stream_point in self.stream_points:
             self.world_map[stream_point[0], stream_point[1]] = 'S'
         self.compute_probabilities()
+        self.num_waster_clean = 0
 
     def custom_action(self, agent, action):
         """Allows agents to take actions that are not move or turn"""
@@ -97,6 +99,12 @@ class CleanupEnv(MapEnv):
                                            cell_types=['H'],
                                            update_char=['R'],
                                            blocking_cells=['H'])
+            if len(updates)>0:
+                agent.update_prosocial(len(updates))
+                self.num_waster_clean = len(updates)
+                return updates
+        agent.update_prosocial(0)
+
         return updates
 
     def custom_map_update(self):

@@ -21,7 +21,8 @@ def get_args():
     """
     parser = argparse.ArgumentParser(
         description='Complex SSDs')
-
+    parser.add_argument('json_file', type=str,
+                        help='')
     parser.add_argument("--exp_name", default=None, help='Name of the ray_results experiment directory where results are stored.')
     parser.add_argument('--env', default='harvest',
         help='Name of the environment to rollout. Can be cleanup or harvest.')
@@ -57,8 +58,7 @@ def get_args():
 
     parser.add_argument(
         "--framework", choices=["tf2", "tf", "tfe", "torch"], default="tfe")
-    parser.add_argument('--json_file', nargs="?", type=str, default=None,
-                        help='')
+    
 
     args = parser.parse_args()
 

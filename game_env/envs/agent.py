@@ -52,142 +52,146 @@ class Agent(object):
 
         #IMRL
 
+        self.core = 'fw' # fw or wf (fairness then wellbing, or wellbeing then fairness)
+        self.wellbeing_fx = 'variance' # variance, aspiration
 
-        self.core = 'wf' # fw or wf (fairness then wellbing, or wellbeing then fairness)
-        self.wellbeing_fx = 'variance' # absolute, variance, aspiration
+        self.episode_len = 1000
 
-        #TASK game has to match rllib's and set alpha appropriately
         #elibility trace
-        self.gamma = 0.99 #
-        self.eligibility_trace = 0
-        self.el_alpha=0.5
-        
-        #defection in M time
-        self.context_memory = 1000
-        self.defectingDeque = deque(maxlen=self.context_memory)
+        self.fairness_gamma = .99
+        self.fairness_alpha = 1
+        self.fairness_epsilon = 0.1
+
+        self.prosocial_metric = 0
+
+        self.reward_gamma = .99
+        self.reward_alpha=1
+
+        self.smoothen_wellbeing = 0
         
 
+
+        self.aspirational = 0.5 
+        self.aspiration_beta = 0.5 # aspiration learning rate
         
-        
-        self.R = 13 
-        self.T = 5 #GameSetting.TAGGED_TIME - GameSetting.APPLE_RESPAWN_TIME/self.R
-        self.S = 0
-        self.P = 0 
-        #A0
-        self.aspirational = self.R + self.T + self.S + self.P
-        self.aspiration_beta = 0.2 # aspiration learning rate
 
         #Core Derivation function
         self.f_u = 1 # conceder 0 < u < 1, linear: u=1, and boulware u>u
         #secondarary emotion derivation g_x
         self.g_v = 1 # 0.2 0.6 1, 2, 3, 5, 10 
+
+
+         
     def reset(self):
         raise NotImplementedError
 
-    def update_internal(self, action, _reward, neigbors, iter_time):
+    def update_internal(self, _reward, neigbors, current_iter, is_cleanup):
         
-        self.update_eligibility(_reward)
-        self.update_defection(action, iter_time)
-        in_reward = self.emotional_derivation(_reward, neigbors)
+        in_reward = self.emotional_derivation(_reward, neigbors, current_iter, is_cleanup)
 
+        # update wellbeing
+        self.update_wellbeing(_reward)
         return in_reward
 
         
 
     
-    def update_eligibility(self, _reward):
-        self.eligibility_trace = self.gamma*self.el_alpha*self.eligibility_trace + _reward
-    
-    def update_defection(self, _action, _iter_time):
-        # consider only defection in last M steps
-        # decection detected
-        if _action == 7:
-            self.defectingDeque.append(_iter_time)
-        # forgot a detection
-        if self.defection_n > 0:
-            if  self.defectingDeque[0]+self.context_memory < _iter_time:
-                self.defectingDeque.popleft()
-    @property
-    def defection_n(self):
-        return len(self.defectingDeque)
+    def update_wellbeing(self, _reward):
+        self.smoothen_wellbeing = self.reward_gamma*self.reward_alpha*self.smoothen_wellbeing + _reward
 
-    def social_fairness_context(self, neightbors):
-        #cn = 1/N sum((ni_c-ni_d/M)
+    def update_prosocial(self, pro_s):
+        self.prosocial_metric = self.fairness_gamma*self.fairness_alpha*self.prosocial_metric  +  pro_s
+
+    def social_fairness_appraisal(self, neightbors, is_cleanup=False):
+        if len(neightbors) == 0: return 0
         Cn=0
+        temp_sum = self.prosocial_metric 
+        reverse = 1
+        if is_cleanup:
+            reverse = -1
         for agent in neightbors:
-            Cn += (agent.context_memory-2*agent.defection_n)/agent.context_memory
-        Cn /=max(1,len(neightbors))
+            temp_sum += agent.prosocial_metric
+            Cn += reverse*agent.prosocial_metric - reverse*self.prosocial_metric 
+        return 0 if temp_sum == 0 else Cn/(temp_sum*len(neightbors) )
 
-        return Cn;
-        
-    
-    def social_fairness_appraisal(self, neightbors):
-        context = self.social_fairness_context(neightbors)
-        cooperating_rate = self.context_memory-2*self.defection_n
-        F = context * (cooperating_rate)/self.context_memory #F = cn x (cn-nd)/M
-        # print(context, cooperating_rate)
-        
-        return F, cooperating_rate < 0 and context >0,  cooperating_rate > 0 and context < 0
-
-    def wellbeing_appraisal(self, _reward):
+    def wellbeing_appraisal(self, _reward, current_iter):
         #social dilemma payoff
-        T = self.T #tempetation
-        S = self.S #sucker
+        # T = self.T #tempetation
+        # S = self.S #sucker
+        
         W = 0
-        try:
-            if self.wellbeing_fx == 'absolute':
-                # W = (2*self.eligibility_trace - self.context_memory*(T-S))/self.context_memory*(T-S) # w = (2r_t - Mx(T-S))/Mx(T-S)
-                W = (2*self.eligibility_trace - self.context_memory*max(1, T-S))/(self.context_memory*max(1, T-S))
-            elif self.wellbeing_fx  == 'variance':
-                W = (self.gamma*self.el_alpha*self.eligibility_trace + _reward - self.eligibility_trace)/(self.context_memory*(T-S)) # w= (r_t+1 - r_t)/Mx(T-S)
-            elif self.wellbeing_fx == 'aspiration':
-                h = 1
-                W = np.tanh(h*(self.eligibility_trace/(self.context_memory-self.aspirational)))
-                self.aspirational = (1-self.aspiration_beta)*self.aspirational + self.aspiration_beta*(self.eligibility_trace/self.context_memory)
-            else:
-                print("the wellbeing function not known")
-                import sys
-                sys.exit(1)
-        except Exception as err:
-            print(err)
-            import sys
-            sys.exit(1)
+        if self.wellbeing_fx  == 'variance':
+            W = ((self.reward_gamma*self.reward_alpha*self.smoothen_wellbeing + _reward) - self.smoothen_wellbeing)/((current_iter-self.reward_gamma*current_iter)+51)
+            # if _reward >=-1:
+            #     print('A')
+            #     W = ((self.reward_gamma*self.reward_alpha*self.smoothen_wellbeing + _reward) - self.smoothen_wellbeing)/(10*50+1) #current_iter- current_iter*self.reward_gamma)
+            # else:
+            #     W = ((self.reward_gamma*self.reward_alpha*self.smoothen_wellbeing + _reward) - self.smoothen_wellbeing)/(60+1)#(current_iter- current_iter*self.reward_gamma))
+                
+        elif self.wellbeing_fx == 'aspiration':
+            h = 10
+            W = np.tanh(h*((self.smoothen_wellbeing/current_iter) - self.aspirational))
+            self.aspirational = (1-self.aspiration_beta)*self.aspirational + self.aspiration_beta*(self.smoothen_wellbeing/(current_iter+1))
+        
 
         return W
                 
-    def emotional_derivation(self, _reward, neighbors):
-        wellbeing_appraisal = self.wellbeing_appraisal(_reward)
-        fairness_appraisal, exploiting, manipulated = self.social_fairness_appraisal(neighbors)
+    def emotional_derivation(self, _reward, neighbors, current_iter, is_cleaup):
+        wellbeing_appraisal = self.wellbeing_appraisal(_reward, current_iter)
+        fairness_appraisal = self.social_fairness_appraisal(neighbors, is_cleaup)
 
+        
+
+        # print("wellbeing: ",wellbeing_appraisal)
+        # print("fariness appraisal: ",fairness_appraisal)
+        assert(abs(wellbeing_appraisal) <=1)
+        assert(abs(fairness_appraisal) <=1)
+
+        if len(neighbors) == 0:
+            return wellbeing_appraisal, False, False, False, False
 
         E_joy = 0
         E_sad = 0
         E_anger = 0
         E_fearful = 0
 
+        
+
         if self.core=='fw':
-            print("Using FW")
-            if fairness_appraisal>0:
-                if wellbeing_appraisal>0:
-                    E_joy = self.core_f(fairness_appraisal)*self.secondary_g(wellbeing_appraisal)
-            elif fairness_appraisal<0:
-                #agents either defect more in a cooperative environement
-                if exploiting:
-                    E_fearful = -(self.core_f(-1*fairness_appraisal)*self.secondary_g(wellbeing_appraisal))
-                elif manipulated:
-                    E_anger = -(self.core_f(-1*fairness_appraisal)*self.secondary_g(-1*wellbeing_appraisal))
+            # print("Using FW")
+            if np.abs(fairness_appraisal) <=self.fairness_epsilon:
+                # if wellbeing_appraisal>0:
+                F = (self.fairness_epsilon-np.abs(fairness_appraisal))/self.fairness_epsilon
+                E_joy = self.core_f(F) * self.secondary_g(wellbeing_appraisal)
+            elif fairness_appraisal>0: #exploiting
+                E_fearful = -self.core_f(abs(fairness_appraisal))*self.secondary_g(wellbeing_appraisal)
+            else: ## same lines but be useful for stats
+                E_anger = -self.core_f(abs(fairness_appraisal))*self.secondary_g(-1*wellbeing_appraisal)
 
         elif self.core == 'wf':
-            print("Using WF")
+            # print("Using WF")
+            if len(neighbors) == 0:
+                    F = 0
+            else:
+                if np.abs(fairness_appraisal) <=self.fairness_epsilon:
+                    F = (self.fairness_epsilon-np.abs(fairness_appraisal))/self.fairness_epsilon
+                else:
+                    F =  -1.*abs(fairness_appraisal)
+            
             if wellbeing_appraisal >0:
-                E_joy = self.core_f(wellbeing_appraisal)*self.secondary_g(fairness_appraisal)
+                E_joy = self.core_f(wellbeing_appraisal)*self.secondary_g(F)
             elif wellbeing_appraisal <0:
-                E_sad = -(self.core_f(-1*wellbeing_appraisal)*self.core_f(fairness_appraisal))
+                E_sad = -(self.core_f(-1*wellbeing_appraisal)*self.secondary_g(F))
         emotions = [E_joy>0, E_sad<0, E_anger<0, E_fearful<0]
-        print(emotions)
-        assert(sum(emotions) < 2, "detected more than one emotions")
+        # print(emotions)
+        assert sum(emotions) <2, "detected more than one emotions"
 
-        return E_joy+E_sad+E_fearful+E_anger
+        # print(f"joy {E_joy} + sad {E_sad} + fear {E_fearful} + anger {E_anger}")
+        assert(E_fearful <= 0 and E_anger <=0 and E_sad<=0 and E_joy >=0)
+
+
+
+        return E_joy + E_sad + E_fearful + E_anger, E_joy>0, E_sad<0, E_fearful<0, E_anger<0
 
     # Core Derivation Function monotonically maps the desireability of emotion to [0, 1]
     def core_f(self, D_x):
@@ -197,6 +201,9 @@ class Agent(object):
     # secondary emotional derivation that maps emotional Intensity [-1, 1] to value [0-1]
     def secondary_g(self, I_x):
         return ((I_x + 1)/2)**self.g_v
+
+
+
 
     @property
     def action_space(self):
@@ -319,8 +326,8 @@ class HarvestAgent(Agent):
         self.update_agent_pos(start_pos)
         self.update_agent_rot(start_orientation)
     def reset(self):
-        self.defectingDeque.clear()
-        self.eligibility_trace= 0
+        self.smoothen_wellbeing= 0
+        self.prosocial_metric = 0
 
     @property
     def action_space(self):
@@ -340,11 +347,11 @@ class HarvestAgent(Agent):
     def hit(self, char):
         if char == 'F':
             self.tagged = True
-            self.reward_this_turn -= 50
+            self.reward_this_turn = -50
 
     def fire_beam(self, char):
         if char == 'F':
-            self.reward_this_turn -= 1
+            self.reward_this_turn = -1
 
     def get_done(self):
         return False
@@ -353,9 +360,22 @@ class HarvestAgent(Agent):
         """Defines how an agent interacts with the char it is standing on"""
         if char == 'A':
             self.reward_this_turn += 1
+            
+            num_apple_in_area = self.count_apples(util.return_view(self.grid, self.get_pos(),
+                                    2, 2))
+            self.update_prosocial(num_apple_in_area**3)
+
+
             return ' '
         else:
+            self.update_prosocial(0)
             return char
+    def count_apples(self, window):
+        # compute how many apples are in window
+        unique, counts = np.unique(window, return_counts=True)
+        counts_dict = dict(zip(unique, counts))
+        num_apples = counts_dict.get('A', 0)
+        return num_apples
 
 
 CLEANUP_ACTIONS = BASE_ACTIONS.copy()
@@ -373,8 +393,8 @@ class CleanupAgent(Agent):
         self.update_agent_pos(start_pos)
         self.update_agent_rot(start_orientation)
     def reset(self):
-        self.defectingDeque.clear()
-        self.eligibility_trace= 0
+        self.smoothen_wellbeing= 0
+        self.prosocial_metric = 0
 
     @property
     def action_space(self):
@@ -393,7 +413,7 @@ class CleanupAgent(Agent):
 
     def fire_beam(self, char):
         if char == 'F':
-            self.reward_this_turn -= 1
+            self.reward_this_turn = -1
 
     def get_done(self):
         return False
@@ -401,7 +421,7 @@ class CleanupAgent(Agent):
     def hit(self, char):
         if char == 'F':
             self.tagged = True
-            self.reward_this_turn -= 50
+            self.reward_this_turn = -50
 
     def consume(self, char):
         
