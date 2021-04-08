@@ -117,6 +117,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     # hyperparams
     config.update({
         "env": env_name,
+        "num_envs_per_worker":24,
         "env_config": {
             "num_agents": num_agents,
             "env_name":env_name,
@@ -134,6 +135,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         },
         "model": {
             "custom_model": model_name,
+            "dim":15,
             "conv_filters":filters,
             # "use_attention": True,
             "post_fcnet_hiddens": [32, 32],

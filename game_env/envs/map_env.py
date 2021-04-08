@@ -101,7 +101,7 @@ class MapEnv(MultiAgentEnv):
 
         
 
-
+        self.imrl_config= config
         
 
         self.iteration = 0
@@ -116,6 +116,8 @@ class MapEnv(MultiAgentEnv):
                 self.intrinsically_motivated = config['imrl']['use']
             
                 for agent in self.agents.values():
+                    agent.core = config['imrl']['core']
+                    agent.wellbeing_fx = config['imrl']['wellbeing_fx']
                     agent.fairness_gamma = config['imrl']['fairness_gamma']
                     agent.fairness_alpha = config['imrl']['fairness_alpha']
                     agent.fairness_epsilon = config['imrl']['fairness_epsilon']
@@ -311,6 +313,26 @@ class MapEnv(MultiAgentEnv):
             #                               agent.row_size, agent.col_size)
             rgb_arr = self.map_to_colors(agent.get_state(), self.color_map)
             observations[agent.agent_id] = rgb_arr
+        
+        if self.imrl_config.get('imrl', -1) != -1:
+            if self.imrl_config['imrl']['use']:
+                self.full_observable = self.imrl_config['imrl']['full_obs']
+                self.intrinsically_motivated = self.imrl_config['imrl']['use']
+            
+                for agent in self.agents.values():
+                    agent.core = self.imrl_config['imrl']['core']
+                    agent.wellbeing_fx = self.imrl_config['imrl']['wellbeing_fx']
+                    agent.fairness_gamma = self.imrl_config['imrl']['fairness_gamma']
+                    agent.fairness_alpha = self.imrl_config['imrl']['fairness_alpha']
+                    agent.fairness_epsilon = self.imrl_config['imrl']['fairness_epsilon']
+                    agent.reward_gamma = self.imrl_config['imrl']['reward_gamma']
+                    agent.reward_alpha = self.imrl_config['imrl']['reward_alpha']
+                    agent.aspirational = self.imrl_config['imrl']['aspirational']
+                    agent.aspiration_beta =self.imrl_config['imrl']['aspiration_beta']
+
+                    agent.f_u = self.imrl_config['imrl']['f_u']
+                    agent.g_v = self.imrl_config['imrl']['g_v']
+                    self.imrl_reward_alpha = self.imrl_config['imrl']['imrl_reward_alpha']
         return observations
 
     @property
