@@ -4,7 +4,7 @@
 #SBATCH --partition=Teach-LongJobs
 #SBATCH --gres=gpu:8
 #SBATCH --mem=12000  # memory in Mb
-#SBATCH --time=02-00:00:00
+#SBATCH --time=01-8:00:00
 
 export CUDA_HOME=/opt/cuda-9.0.176.1/
 
@@ -33,4 +33,4 @@ mkdir -p ${TMP}/datasets/
 source /home/${STUDENT_ID}/miniconda3/bin/activate ssd3
 
 
-python train_params_optmizer.py experiments/combined_rewards_harvest.json
+python final_train.py experiments/final_harvest.json

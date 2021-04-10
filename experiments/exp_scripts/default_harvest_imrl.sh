@@ -33,4 +33,4 @@ mkdir -p ${TMP}/datasets/
 source /home/${STUDENT_ID}/miniconda3/bin/activate ssd3
 
 
-python train.py experiments/default_harvest_imrl.json
+python train.py experiments/default_imrl.json

@@ -257,7 +257,7 @@ class MapEnv(MultiAgentEnv):
                 info[agent_id]['inR'] = 0
 
             rewards[agent_id] = self.imrl_reward_alpha * in_reward + ex_reward
-            print(rewards[agent_id], ex_reward, in_reward)
+            # print(rewards[agent_id], ex_reward, in_reward)
 
 
 
