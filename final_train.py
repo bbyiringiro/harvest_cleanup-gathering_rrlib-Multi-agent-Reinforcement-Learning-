@@ -166,7 +166,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 "full_obs":False,
                 "fairness_gamma":0.99,
                 "fairness_alpha": 1,
-                "fairness_epsilon":0.1, #change to optimal
+                "fairness_epsilon":0.05, #change to optimal
                 "reward_gamma": 0.99,
                 "reward_alpha": 1,
                 "aspirational": 0.5,
