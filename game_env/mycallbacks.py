@@ -32,6 +32,7 @@ class CleanUPCallback(DefaultCallbacks):
         episode.user_data["extrinsic_reward"] = []
         episode.user_data["intrinsic_reward"] = []
         episode.user_data["aggress"] = []
+        episode.user_data["waste_cleaned"] = []
         episode.user_data["clean_counter"] = []
         episode.user_data["sustain"] = {'agent-'+str(i):[] for i in range(self.num_of_agents)}
         episode.user_data["tagged_agents"] = []
@@ -66,8 +67,8 @@ class CleanUPCallback(DefaultCallbacks):
                 fire += 1
             elif info['agent_action'] == 8:
                 clean_counter += 1
-
-
+        wast_cleaned = episode.last_info_for('agent-0').get('waste_cleaned_num',0)
+        episode.user_data["waste_cleaned"].append(wast_cleaned)
 
         episode.user_data["extrinsic_reward"].append(ex_reward)
         episode.user_data["intrinsic_reward"].append(in_reward)
@@ -95,6 +96,7 @@ class CleanUPCallback(DefaultCallbacks):
         episode.custom_metrics["InReward"] = np.sum(episode.user_data["intrinsic_reward"])
         episode.custom_metrics["aggress_metric"] = np.sum(episode.user_data["aggress"])
         episode.custom_metrics["clean_counter_metric"] = np.sum(episode.user_data["clean_counter"])
+        episode.custom_metrics["waste_cleaned_metric"] = np.sum(episode.user_data["waste_cleaned"])
         
 
         episode.custom_metrics["Utalitarian_metric"] = episode.custom_metrics["ExReward"]/T

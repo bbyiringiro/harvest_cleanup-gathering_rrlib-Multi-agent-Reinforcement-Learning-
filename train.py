@@ -86,8 +86,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         return agent_id
 
     # register the custom model
-    model_name = "conv_to_fc_net"
-    ModelCatalog.register_custom_model(model_name, VisionNetwork2)
+    # model_name = "conv_to_fc_net"
+    # ModelCatalog.register_custom_model(model_name, VisionNetwork2)
 
     agent_cls = get_trainer_class(algorithm)
     config = agent_cls._default_config.copy()
@@ -134,7 +134,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
             "policy_mapping_fn": tune.function(policy_mapping_fn)
         },
         "model": {
-            "custom_model": model_name,
+            # "custom_model": model_name,
             "dim":15,
             "conv_filters":filters,
             # "use_attention": True,

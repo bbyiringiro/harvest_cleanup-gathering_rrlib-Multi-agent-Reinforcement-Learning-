@@ -33,4 +33,4 @@ mkdir -p ${TMP}/datasets/
 source /home/${STUDENT_ID}/miniconda3/bin/activate ssd3
 
 
-python train_params_optmizer.py experiments/default_both_imrl.json
+python train_params_optmizer.py experiments/combined_rewards_cleanup.json

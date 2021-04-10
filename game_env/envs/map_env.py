@@ -130,10 +130,10 @@ class MapEnv(MultiAgentEnv):
                     agent.g_v = config['imrl']['g_v']
                     self.imrl_reward_alpha = config['imrl']['imrl_reward_alpha']
 
-        if config.get('env_name', '') =='cleanup':
-            self.is_env_cleanup = True
-        else:
-            self.is_env_cleanup = False
+            if config.get('env_name', '') =='cleanup_env':
+                self.is_env_cleanup = True
+            else:
+                self.is_env_cleanup = False
 
         # plt.ion()
         
@@ -249,23 +249,23 @@ class MapEnv(MultiAgentEnv):
                 in_reward, joy, sad , fear, anger= agent.update_internal(
                     ex_reward,\
                     self.get_neigbors(agent_id, agent),\
-                    self.iteration, self.is_env_cleanup)
+                    self.iteration+1, self.is_env_cleanup)
 
                 info[agent_id]['inR'] = in_reward
 
             else:
                 info[agent_id]['inR'] = 0
 
-            rewards[agent_id] = self.imrl_reward_alpha * in_reward + (1-self.imrl_reward_alpha)*ex_reward
-            # print(rewards[agent_id], ex_reward, in_reward)
+            rewards[agent_id] = self.imrl_reward_alpha * in_reward + ex_reward
+            print(rewards[agent_id], ex_reward, in_reward)
 
 
 
             
-
-        #report this        
-        # self.num_waster_clean
-        # self.num_waster_clean=0
+        if self.is_env_cleanup:
+        #report this
+            info['agent-0']['waste_cleaned_num'] = self.num_waster_clean #only use first agent to report this metric        
+            self.num_waster_clean=0
 
 
         dones["__all__"] = np.any(list(dones.values()))

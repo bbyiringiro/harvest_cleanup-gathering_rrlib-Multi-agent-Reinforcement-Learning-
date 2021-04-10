@@ -117,7 +117,6 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     # hyperparams
     config.update({
         "env": env_name,
-        "num_envs_per_worker":24,
         "env_config": {
             "num_agents": num_agents,
             "env_name":env_name,
@@ -153,28 +152,29 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
         [[0, hparams['lr_init']],
             [2000000, hparams['lr_final']]], #20000000
         # "entropy_coeff": hparams['entropy_coeff'],
-        "num_workers": num_workers,
-        "num_gpus": gpus_for_driver,  # The number of GPUs for the driver
-        "num_cpus_for_driver": cpus_for_driver,
-        "num_gpus_per_worker": num_gpus_per_worker,   # Can be a fraction
-        "num_cpus_per_worker": num_cpus_per_worker,   # Can be a fraction
+        "num_workers": 2,
+        "num_gpus": 2,  # The number of GPUs for the driver
+        "num_cpus_for_driver": 1,
+        "num_envs_per_worker":24,
+        # "num_gpus_per_worker": num_gpus_per_worker,   # Can be a fraction
+        "num_cpus_per_worker": 1,   # Can be a fraction
     })
     if args.imrl['use']:
         config['env_config'].update({
             'imrl':{"use":True,
-                "imrl_reward_alpha":1,
+                "imrl_reward_alpha":tune.grid_search([1, 10, 0.5, 50]),
                 "full_obs":False,
                 "fairness_gamma":0.99,
                 "fairness_alpha": 1,
-                "fairness_epsilon":0.1,
+                "fairness_epsilon":0.1, #change to optimal
                 "reward_gamma": 0.99,
                 "reward_alpha": 1,
                 "aspirational": 0.5,
-                "aspiration_beta": 0.01,
+                "aspiration_beta": 0.5,
                 "f_u": 1,
                 "g_v": 1,
                 "core":tune.grid_search(['fw', 'wf']),
-                "wellbeing_fx":tune.grid_search(['variance', 'aspiration'])
+                "wellbeing_fx":'variance'
         }
         })
 
@@ -184,8 +184,8 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
 
 
 def main(args):
-    # ray.init()
-    ray.init(address="auto")
+    ray.init()
+    # ray.init(address="auto")
 
     # ray.init(log_to_driver=False)
     if args.env == 'harvest':

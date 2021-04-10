@@ -7,7 +7,7 @@
     "train_batch_size": 300, 
     "checkpoint_frequency": 500, 
     "training_iterations": 10000, 
-    "num_cpus": 3, 
+    "num_cpus": 2, 
     "num_gpus": 0, 
     "use_gpus_for_workers": false, 
     "use_gpu_for_driver": false, 
@@ -15,7 +15,7 @@
     "reuse_actors": false, 
     "resume": false, 
     "verbose": 3, 
-    "framework": "tf", 
+    "framework": "tfe", 
     "from_checkpoint": "None",
     "imrl":{
         "use":true,
@@ -30,7 +30,7 @@
         "aspiration_beta": 0.01,
         "f_u": 1,
         "g_v": 1,
-        "core":"fw",
-        "wellbeing_fx":"variance"
+        "core":"gw",
+        "wellbeing_fx":"aspiration"
     }
 }

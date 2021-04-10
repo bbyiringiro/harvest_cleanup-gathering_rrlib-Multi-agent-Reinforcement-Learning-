@@ -1,4 +1,5 @@
 """Base class for an agent that defines the possible actions. """
+from os import system
 import sys
 sys.path.append("..")
 from gym.spaces import Box
@@ -72,7 +73,7 @@ class Agent(object):
 
 
         self.aspirational = 0.5 
-        self.aspiration_beta = 0.5 # aspiration learning rate
+        self.aspiration_beta = 0.1 # aspiration learning rate
         
 
         #Core Derivation function
@@ -143,7 +144,7 @@ class Agent(object):
         
 
         # print("wellbeing: ",wellbeing_appraisal)
-        # print("fariness appraisal: ",fairness_appraisal)
+        # print("fariness appraisal: ",fairness_appraisal, len(neighbors))
         assert(abs(wellbeing_appraisal) <=1)
         assert(abs(fairness_appraisal) <=1)
 
@@ -170,18 +171,19 @@ class Agent(object):
 
         elif self.core == 'wf':
             # print("Using WF")
-            if len(neighbors) == 0:
-                    F = 0
+            
+            if np.abs(fairness_appraisal) <=self.fairness_epsilon:
+                F = (self.fairness_epsilon-np.abs(fairness_appraisal))/self.fairness_epsilon
             else:
-                if np.abs(fairness_appraisal) <=self.fairness_epsilon:
-                    F = (self.fairness_epsilon-np.abs(fairness_appraisal))/self.fairness_epsilon
-                else:
-                    F =  -1.*abs(fairness_appraisal)
+                F =  -1.*abs(fairness_appraisal)
             
             if wellbeing_appraisal >0:
                 E_joy = self.core_f(wellbeing_appraisal)*self.secondary_g(F)
             elif wellbeing_appraisal <0:
                 E_sad = -(self.core_f(-1*wellbeing_appraisal)*self.secondary_g(F))
+        else:
+            print("unknown emo function")
+            sys.exit()
         emotions = [E_joy>0, E_sad<0, E_anger<0, E_fearful<0]
         # print(emotions)
         assert sum(emotions) <2, "detected more than one emotions"
@@ -201,6 +203,8 @@ class Agent(object):
     # secondary emotional derivation that maps emotional Intensity [-1, 1] to value [0-1]
     def secondary_g(self, I_x):
         return ((I_x + 1)/2)**self.g_v
+
+    
 
 
 

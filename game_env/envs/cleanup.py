@@ -101,7 +101,7 @@ class CleanupEnv(MapEnv):
                                            blocking_cells=['H'])
             if len(updates)>0:
                 agent.update_prosocial(len(updates))
-                self.num_waster_clean = len(updates)
+                self.num_waster_clean += len(updates)
                 return updates
         agent.update_prosocial(0)
 
