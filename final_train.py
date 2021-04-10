@@ -1,6 +1,3 @@
-[uhtred]s1794094: cd harvest_cleanup/
-[uhtred]s1794094: vi train_params_optmizer.py
-[uhtred]s1794094: cat train_params_optmizer.py
 import argparse
 import gym
 import os
