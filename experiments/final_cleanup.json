@@ -1,5 +1,5 @@
 {
-    "exp_name": "fw_harvest",
+    "exp_name": "fw_cleanup",
     "exp_index":1,
     "env": "cleanup",
     "algorithm": "A3C",
