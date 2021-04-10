@@ -173,7 +173,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
                 "aspiration_beta": 0.5,
                 "f_u": 1,
                 "g_v": 1,
-                "core":'fw', #'wf',
+                "core":'wf', #'wf',
                 "wellbeing_fx":'variance'
         }
         })
