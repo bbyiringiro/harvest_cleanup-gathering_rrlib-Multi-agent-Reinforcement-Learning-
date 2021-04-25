@@ -105,11 +105,18 @@ class MapEnv(MultiAgentEnv):
         
 
         self.iteration = 0
-        self.intrinsically_motivated = True
+        self.intrinsically_motivated = False
         self.full_observable =False
         self.is_env_cleanup = False
         self.imrl_reward_alpha = 1
         # IMRL
+
+        print(config)
+        print(config.get('imrl', -1))
+        print(config['imrl']['use'])
+        
+
+
         if config.get('imrl', -1) != -1:
             if config['imrl']['use']:
                 self.full_observable = config['imrl']['full_obs']
@@ -129,11 +136,16 @@ class MapEnv(MultiAgentEnv):
                     agent.f_u = config['imrl']['f_u']
                     agent.g_v = config['imrl']['g_v']
                     self.imrl_reward_alpha = config['imrl']['imrl_reward_alpha']
+                
+                print('here', self.intrinsically_motivated)
+                # import sys
+                # sys.exit()
 
             if config.get('env_name', '') =='cleanup_env':
                 self.is_env_cleanup = True
             else:
                 self.is_env_cleanup = False
+            
 
         # plt.ion()
         
@@ -313,11 +325,9 @@ class MapEnv(MultiAgentEnv):
             #                               agent.row_size, agent.col_size)
             rgb_arr = self.map_to_colors(agent.get_state(), self.color_map)
             observations[agent.agent_id] = rgb_arr
-        
+
         if self.imrl_config.get('imrl', -1) != -1:
             if self.imrl_config['imrl']['use']:
-                self.full_observable = self.imrl_config['imrl']['full_obs']
-                self.intrinsically_motivated = self.imrl_config['imrl']['use']
             
                 for agent in self.agents.values():
                     agent.core = self.imrl_config['imrl']['core']

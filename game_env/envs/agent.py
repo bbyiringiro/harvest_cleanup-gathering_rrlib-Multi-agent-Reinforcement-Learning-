@@ -143,8 +143,8 @@ class Agent(object):
 
         
 
-        # print("wellbeing: ",wellbeing_appraisal)
-        # print("fariness appraisal: ",fairness_appraisal, len(neighbors))
+        print("wellbeing: ",wellbeing_appraisal)
+        print("fariness appraisal: ",fairness_appraisal, len(neighbors))
         assert(abs(wellbeing_appraisal) <=1)
         assert(abs(fairness_appraisal) <=1)
 
