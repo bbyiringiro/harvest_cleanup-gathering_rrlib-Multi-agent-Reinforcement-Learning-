@@ -161,7 +161,7 @@ def setup(env, hparams, algorithm, train_batch_size, num_cpus, num_gpus,
     })
     if args.imrl['use']:
         config['env_config'].update({
-            'imrl':{"use":False,
+            'imrl':{"use":True,
                 "imrl_reward_alpha":1, 
                 "full_obs":False,
                 "fairness_gamma":0.99,

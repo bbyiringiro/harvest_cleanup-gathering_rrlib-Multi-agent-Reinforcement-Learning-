@@ -1,5 +1,5 @@
 {
-    "exp_name": "wf_harvest",
+    "exp_name": "wf_semiE_harvest",
     "exp_index":1,
     "env": "harvest",
     "algorithm": "A3C",

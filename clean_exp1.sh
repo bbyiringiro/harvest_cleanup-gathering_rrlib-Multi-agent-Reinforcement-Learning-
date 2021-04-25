@@ -1,10 +1,10 @@
 #!/bin/sh
-#SBATCH -N 1    # nodes requested
-#SBATCH -n 8      # tasks requested
+#SBATCH -N 1     # nodes requested
+#SBATCH -n 1      # tasks requested
 #SBATCH --partition=Teach-LongJobs
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:3
 #SBATCH --mem=12000  # memory in Mb
-#SBATCH --time=03-00:00:00
+#SBATCH --time=01-00:00:00
 
 export CUDA_HOME=/opt/cuda-9.0.176.1/
 
@@ -33,4 +33,4 @@ mkdir -p ${TMP}/datasets/
 source /home/${STUDENT_ID}/miniconda3/bin/activate ssd3
 
 
-python final_train.py experiments/final_harvest.json
+python train.py --json_file experiments/default_cleanup.json
