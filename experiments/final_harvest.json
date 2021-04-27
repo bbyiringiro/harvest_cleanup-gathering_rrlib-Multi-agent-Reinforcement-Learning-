@@ -14,7 +14,7 @@
     "num_workers_per_device": 2,
     "reuse_actors": false,
     "resume": false,
-    "verbose": 0,
+    "verbose": 3,
     "framework": "tf",
     "from_checkpoint": "None",
     "imrl":{

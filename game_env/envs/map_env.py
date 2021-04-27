@@ -111,9 +111,9 @@ class MapEnv(MultiAgentEnv):
         self.imrl_reward_alpha = 1
         # IMRL
 
-        print(config)
-        print(config.get('imrl', -1))
-        print(config['imrl']['use'])
+        # print(config)
+        # print(config.get('imrl', -1))
+        # print(config['imrl']['use'])
         
 
 
@@ -137,7 +137,7 @@ class MapEnv(MultiAgentEnv):
                     agent.g_v = config['imrl']['g_v']
                     self.imrl_reward_alpha = config['imrl']['imrl_reward_alpha']
                 
-                print('here', self.intrinsically_motivated)
+                # print('here', self.intrinsically_motivated)
                 # import sys
                 # sys.exit()
 
