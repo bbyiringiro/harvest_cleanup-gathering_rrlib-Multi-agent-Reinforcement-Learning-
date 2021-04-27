@@ -155,6 +155,7 @@ class Agent(object):
         E_sad = 0
         E_anger = 0
         E_fearful = 0
+        E_semi_ego =0
 
         
 
@@ -182,7 +183,7 @@ class Agent(object):
             elif wellbeing_appraisal <0:
                 E_sad = -(self.core_f(-1*wellbeing_appraisal)*self.secondary_g(F))
             else: # semi-egoists
-                E_sad = F
+                E_semi_ego = F
         else:
             print("unknown emo function")
             sys.exit()
@@ -195,7 +196,7 @@ class Agent(object):
 
 
 
-        return E_joy + E_sad + E_fearful + E_anger, E_joy>0, E_sad<0, E_fearful<0, E_anger<0
+        return E_joy + E_sad + E_fearful + E_anger+E_semi_ego, E_joy>0, E_sad<0, E_fearful<0, E_anger<0
 
     # Core Derivation Function monotonically maps the desireability of emotion to [0, 1]
     def core_f(self, D_x):
