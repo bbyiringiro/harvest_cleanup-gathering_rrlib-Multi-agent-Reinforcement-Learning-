@@ -182,7 +182,7 @@ class Agent(object):
             elif wellbeing_appraisal <0:
                 E_sad = -(self.core_f(-1*wellbeing_appraisal)*self.secondary_g(F))
             else: # semi-egoists
-                return F
+                E_sad = F
         else:
             print("unknown emo function")
             sys.exit()
